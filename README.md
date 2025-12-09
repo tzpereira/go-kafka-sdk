@@ -1,38 +1,38 @@
 # go-kafka-sdk
 
-A simple Go SDK for Apache Kafka, providing:
-- Asynchronous Producer abstraction
-- Multi-goroutine Consumer utilities
-- Batch and single-message consumption
+A lightweight Go SDK for Apache Kafka, providing: - Asynchronous
+Producer abstraction\
+- Multi-goroutine Consumer utilities\
+- Batch and single-message consumption helpers
 
 ## Requirements
-- Go 1.18+
-- [confluent-kafka-go](https://github.com/confluentinc/confluent-kafka-go)
-- A running Kafka broker (see Docker example below)
+
+-   Go 1.18+
+-   [confluent-kafka-go](https://github.com/confluentinc/confluent-kafka-go)
+-   A running Kafka broker (see Docker example below)
 
 ## Installation
 
 Install dependencies:
-```sh
+
+``` sh
 go get github.com/confluentinc/confluent-kafka-go/kafka
 go get github.com/joho/godotenv
 ```
 
 ## Environment Variables
 
-You can configure the examples using a `.env` file or environment variables:
+Examples can be configured using a `.env` file or environment variables:
 
-```
-KAFKA_BROKERS=localhost:9092
-KAFKA_TOPICS=test-topic
-KAFKA_GROUP_ID=test-group
-```
+    KAFKA_BROKERS=localhost:9092
+    KAFKA_TOPICS=test-topic
+    KAFKA_GROUP_ID=test-group
 
 ## Running Kafka Locally (Docker Compose)
 
 Example `docker-compose.yml`:
 
-```yaml
+``` yaml
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
@@ -56,7 +56,8 @@ services:
 ```
 
 Start Kafka:
-```sh
+
+``` sh
 docker-compose up -d
 ```
 
@@ -64,9 +65,9 @@ docker-compose up -d
 
 ### Producer Example
 
-See [`cmd/producer/main.go`](cmd/producer/main.go):
+See [`examples/producer/main.go`](examples/producer/main.go):
 
-```go
+``` go
 // Command producer is an example Kafka producer using go-kafka-sdk.
 //
 // Reads configuration from .env or environment variables:
@@ -80,15 +81,16 @@ See [`cmd/producer/main.go`](cmd/producer/main.go):
 ```
 
 Run:
-```sh
-go run ./cmd/producer
+
+``` sh
+go run ./examples/producer
 ```
 
 ### Consumer Example
 
-See [`cmd/consumer/main.go`](cmd/consumer/main.go):
+See [`examples/consumer/main.go`](examples/consumer/main.go):
 
-```go
+``` go
 // Command consumer is an example Kafka consumer using go-kafka-sdk.
 //
 // Reads configuration from .env or environment variables:
@@ -103,18 +105,22 @@ See [`cmd/consumer/main.go`](cmd/consumer/main.go):
 ```
 
 Run:
-```sh
-go run ./cmd/consumer
+
+``` sh
+go run ./examples/consumer
 ```
 
 ## Running Tests
 
-To run all tests (requires Kafka running on localhost:9092):
+To execute all tests (Kafka must be running on `localhost:9092`):
 
-```sh
-go test -v ./internal/kafka
+``` sh
+go test -v ./kafka
 ```
 
 ## Notes
-- No brokers or topics are hardcoded; provide them via parameters.
-- See the code for more advanced usage (batch consumption, custom configs, etc).
+
+-   No brokers, topics, or consumer groups are hardcoded --- pass them
+    via parameters or environment variables.
+-   Check the source code for more advanced use cases such as batch
+    consumption, worker pools, and custom Kafka configs.
