@@ -75,7 +75,7 @@ See [`examples/producer/main.go`](examples/producer/main.go):
 //   KAFKA_TOPICS:  topic name (e.g., test-topic)
 //
 // Usage:
-//   go run ./cmd/producer
+//   go run ./examples/producer
 //
 // The program sends a test message to the specified topic.
 ```
@@ -99,7 +99,7 @@ See [`examples/consumer/main.go`](examples/consumer/main.go):
 //   KAFKA_GROUP_ID: consumer group name (e.g., test-group)
 //
 // Usage:
-//   go run ./cmd/consumer
+//   go run ./examples/consumer
 //
 // The program consumes messages from the specified topic and prints them to the terminal.
 ```
