@@ -1,8 +1,8 @@
 # go-kafka-sdk
 
 A lightweight Go SDK for Apache Kafka, providing: - Asynchronous
-Producer abstraction\
-- Multi-goroutine Consumer utilities\
+Producer abstraction
+- Multi-goroutine Consumer utilities
 - Batch and single-message consumption helpers
 
 ## Requirements
