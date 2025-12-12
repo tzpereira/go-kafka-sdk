@@ -7,10 +7,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	kafkasdk "github.com/tzpereira/go-kafka-sdk/kafka"
-
-	ckafka "github.com/confluentinc/confluent-kafka-go/kafka"
 	_ "github.com/joho/godotenv/autoload"
+	kafkasdk "github.com/tzpereira/go-kafka-sdk/kafka"
 )
 
 func main() {
@@ -36,19 +34,19 @@ func main() {
 	defer producer.Close()
 
 	// Delivery report
-	kafkasdk.StartDeliveryHandler(ctx, producer, func(m *ckafka.Message) {
-		if m.TopicPartition.Error != nil {
-			fmt.Printf("delivery failed: %v\n", m.TopicPartition.Error)
-			return
-		}
-		fmt.Printf("delivered to %v\n", m.TopicPartition)
+	producer.StartDeliveryHandler(ctx, func(m *kafkasdk.Message) {
+		fmt.Printf("delivered to topic %s partition %d\n", m.Topic, m.Partition)
 	})
 
 	// Publish test message
 	payload := []byte("hello from go-kafka-sdk")
 	fmt.Printf("Producing to topic '%s'...\n", topic)
 
-	if err := kafkasdk.Produce(ctx, producer, topic, payload); err != nil {
+	err = producer.Produce(ctx, &kafkasdk.Message{
+		Topic: topic,
+		Value: payload,
+	})
+	if err != nil {
 		fmt.Fprintf(os.Stderr, "produce error: %v\n", err)
 	}
 

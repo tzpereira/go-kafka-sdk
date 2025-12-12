@@ -7,10 +7,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	kafkasdk "github.com/tzpereira/go-kafka-sdk/kafka"
-
-	ckafka "github.com/confluentinc/confluent-kafka-go/kafka"
 	_ "github.com/joho/godotenv/autoload"
+	kafkasdk "github.com/tzpereira/go-kafka-sdk/kafka"
 )
 
 func main() {
@@ -30,13 +28,15 @@ func main() {
 
 	fmt.Printf("Consuming from %v (group=%s)\n", cfg.Topics, cfg.GroupID)
 
-	kafkasdk.Consume(ctx, consumer, func(msg *ckafka.Message) {
-		fmt.Printf("topic=%s partition=%d offset=%v key=%s value=%s\n",
-			*msg.TopicPartition.Topic,
-			msg.TopicPartition.Partition,
-			msg.TopicPartition.Offset,
+	err = consumer.Consume(ctx, func(msg *kafkasdk.Message) {
+		fmt.Printf("topic=%s partition=%d key=%s value=%s\n",
+			msg.Topic,
+			msg.Partition,
 			string(msg.Key),
 			string(msg.Value),
 		)
 	})
+	if err != nil && err != context.Canceled && err != context.DeadlineExceeded {
+		fmt.Fprintf(os.Stderr, "consumer error: %v\n", err)
+	}
 }
