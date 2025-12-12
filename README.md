@@ -5,6 +5,11 @@ A lightweight Go SDK for Apache Kafka, providing:
 - Multi-goroutine Consumer utilities
 - Batch and single-message consumption helpers
 
+## Architecture
+
+![Architecture Diagram](docs/architecture.png)
+
+
 ## Requirements
 
 -   Go 1.18+
