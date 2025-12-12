@@ -5,8 +5,6 @@ import (
 	"os"
 	"testing"
 	"time"
-
-	ckafka "github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
 func TestNewConfigFromEnv(t *testing.T) {
@@ -26,7 +24,6 @@ func TestNewConfigFromEnv(t *testing.T) {
 	}
 }
 
-
 func TestProducerConsumerIntegration(t *testing.T) {
 	brokers := []string{"localhost:9092"}
 	topic := "test-integration-topic"
@@ -40,7 +37,10 @@ func TestProducerConsumerIntegration(t *testing.T) {
 	defer producer.Close()
 
 	testValue := []byte("test message")
-	err = Produce(context.Background(), producer, topic, testValue)
+	err = producer.Produce(context.Background(), &Message{
+		Topic: topic,
+		Value: testValue,
+	})
 	if err != nil {
 		t.Fatalf("failed to produce message: %v", err)
 	}
@@ -56,7 +56,7 @@ func TestProducerConsumerIntegration(t *testing.T) {
 	found := false
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	err = Consume(ctx, consumer, func(msg *ckafka.Message) {
+	err = consumer.Consume(ctx, func(msg *Message) {
 		if string(msg.Value) == string(testValue) {
 			found = true
 			cancel()
