@@ -1,0 +1,27 @@
+flowchart TD
+
+subgraph User_Application["Your Application"]
+    ProducerApp["Go Service<br/><b>Producer</b>"]:::app
+    ConsumerApp["Go Service<br/><b>Consumer</b>"]:::app
+end
+
+subgraph SDK["go-kafka-sdk"]
+    ProducerAPI["<b>Producer API</b>"]:::sdk
+    ConsumerAPI["<b>Consumer API</b>"]:::sdk
+end
+
+Kafka["<b>Kafka Cluster</b>"]:::kafka
+
+%% Producer flow
+ProducerApp -- "calls<br/><code>NewProducer()</code>" --> ProducerAPI
+ProducerApp -- "calls<br/><code>producer.Produce()</code>" --> ProducerAPI
+ProducerAPI -- "sends message" --> Kafka
+
+%% Consumer flow
+ConsumerApp -- "calls<br/><code>NewConsumer()</code>" --> ConsumerAPI
+ConsumerApp -- "calls<br/><code>consumer.Consume()</code>" --> ConsumerAPI
+ConsumerAPI -- "receives message" --> Kafka
+
+classDef app fill:#f5faff,stroke:#1976d2,stroke-width:2px,font-weight:bold;
+classDef kafka fill:#fff3e0,stroke:#ff9800,stroke-width:2px,font-weight:bold;
+classDef sdk fill:#e8f5e9,stroke:#388e3c,stroke-width:2px,font-weight:bold;
