@@ -1,14 +1,14 @@
 # go-kafka-sdk
 
-A lightweight Go SDK for Apache Kafka, providing: - Asynchronous
-Producer abstraction
+A lightweight Go SDK for Apache Kafka, providing:
+- Asynchronous Producer abstraction
 - Multi-goroutine Consumer utilities
 - Batch and single-message consumption helpers
 
 ## Requirements
 
 -   Go 1.18+
--   [confluent-kafka-go](https://github.com/confluentinc/confluent-kafka-go)
+-   [confluent-kafka-go](https://github.com/confluentinc/confluent-kafka-go) (as a transitive dependency)
 -   A running Kafka broker (see Docker example below)
 
 ## Installation
@@ -16,7 +16,7 @@ Producer abstraction
 Install dependencies:
 
 ``` sh
-go get github.com/confluentinc/confluent-kafka-go/kafka
+go get github.com/tzpereira/go-kafka-sdk/kafka
 go get github.com/joho/godotenv
 ```
 
@@ -67,17 +67,55 @@ docker-compose up -d
 
 See [`examples/producer/main.go`](examples/producer/main.go):
 
-``` go
-// Command producer is an example Kafka producer using go-kafka-sdk.
-//
-// Reads configuration from .env or environment variables:
-//   KAFKA_BROKERS: list of brokers (e.g., localhost:9092)
-//   KAFKA_TOPICS:  topic name (e.g., test-topic)
-//
-// Usage:
-//   go run ./examples/producer
-//
-// The program sends a test message to the specified topic.
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    "os/signal"
+    "syscall"
+
+    kafkasdk "github.com/tzpereira/go-kafka-sdk/kafka"
+    _ "github.com/joho/godotenv/autoload"
+)
+
+func main() {
+    ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+    defer stop()
+
+    cfg := kafkasdk.NewConfigFromEnv()
+    if len(cfg.Topics) == 0 {
+        fmt.Println("no topics defined via KAFKA_TOPICS")
+        os.Exit(1)
+    }
+    topic := cfg.Topics[0]
+
+    producer, err := kafkasdk.NewProducer(cfg.Brokers, nil)
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "failed to create producer: %v\n", err)
+        os.Exit(1)
+    }
+    defer producer.Close()
+
+    producer.StartDeliveryHandler(ctx, func(m *kafkasdk.Message) {
+        fmt.Printf("delivered to topic %s partition %d\n", m.Topic, m.Partition)
+    })
+
+    payload := []byte("hello from go-kafka-sdk")
+    fmt.Printf("Producing to topic '%s'...\n", topic)
+
+    err = producer.Produce(ctx, &kafkasdk.Message{
+        Topic: topic,
+        Value: payload,
+    })
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "produce error: %v\n", err)
+    }
+
+    producer.Flush(5000)
+}
 ```
 
 Run:
@@ -90,18 +128,46 @@ go run ./examples/producer
 
 See [`examples/consumer/main.go`](examples/consumer/main.go):
 
-``` go
-// Command consumer is an example Kafka consumer using go-kafka-sdk.
-//
-// Reads configuration from .env or environment variables:
-//   KAFKA_BROKERS: list of brokers (e.g., localhost:9092)
-//   KAFKA_TOPICS:  topic name (e.g., test-topic)
-//   KAFKA_GROUP_ID: consumer group name (e.g., test-group)
-//
-// Usage:
-//   go run ./examples/consumer
-//
-// The program consumes messages from the specified topic and prints them to the terminal.
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    "os/signal"
+    "syscall"
+
+    kafkasdk "github.com/tzpereira/go-kafka-sdk/kafka"
+    _ "github.com/joho/godotenv/autoload"
+)
+
+func main() {
+    ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+    defer stop()
+
+    cfg := kafkasdk.NewConfigFromEnv()
+    consumer, err := kafkasdk.NewConsumer(cfg.Brokers, cfg.GroupID, cfg.Topics, nil)
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "failed to create consumer: %v\n", err)
+        os.Exit(1)
+    }
+    defer consumer.Close()
+
+    fmt.Printf("Consuming from %v (group=%s)\n", cfg.Topics, cfg.GroupID)
+
+    err = consumer.Consume(ctx, func(msg *kafkasdk.Message) {
+        fmt.Printf("topic=%s partition=%d key=%s value=%s\n",
+            msg.Topic,
+            msg.Partition,
+            string(msg.Key),
+            string(msg.Value),
+        )
+    })
+    if err != nil && err != context.Canceled && err != context.DeadlineExceeded {
+        fmt.Fprintf(os.Stderr, "consumer error: %v\n", err)
+    }
+}
 ```
 
 Run:
@@ -120,7 +186,5 @@ go test -v ./kafka
 
 ## Notes
 
--   No brokers, topics, or consumer groups are hardcoded --- pass them
-    via parameters or environment variables.
--   Check the source code for more advanced use cases such as batch
-    consumption, worker pools, and custom Kafka configs.
+-   No brokers, topics, or consumer groups are hardcoded --- pass them via parameters or environment variables.
+-   Check the source code for more advanced use cases such as batch consumption, worker pools, and custom Kafka configs.
