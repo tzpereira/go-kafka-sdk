@@ -28,44 +28,48 @@ func TestProducerConsumerIntegration(t *testing.T) {
 	brokers := []string{"localhost:9092"}
 	topic := "test-integration-topic"
 	groupID := "test-integration-group"
+	testValue := []byte("test message")
 
-	// Produce a message
+	// --- Step 1: Produce a message ---
 	producer, err := NewProducer(brokers, nil)
 	if err != nil {
-		t.Fatalf("failed to create producer: %v", err)
+		t.Fatalf("Failed to create producer: %v", err)
 	}
 	defer producer.Close()
 
-	testValue := []byte("test message")
-	err = producer.Produce(context.Background(), &Message{
+	msg := &Message{
 		Topic: topic,
 		Value: testValue,
-	})
-	if err != nil {
-		t.Fatalf("failed to produce message: %v", err)
+	}
+	if err := producer.Produce(context.Background(), msg); err != nil {
+		t.Fatalf("Failed to produce message: %v", err)
 	}
 	producer.Flush(5000)
 
-	// Consume the message
+	// --- Step 2: Consume the message ---
 	consumer, err := NewConsumer(brokers, groupID, []string{topic}, nil)
 	if err != nil {
-		t.Fatalf("failed to create consumer: %v", err)
+		t.Fatalf("Failed to create consumer: %v", err)
 	}
 	defer consumer.Close()
 
 	found := false
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	err = consumer.Consume(ctx, func(msg *Message) {
-		if string(msg.Value) == string(testValue) {
+
+	consumeErr := consumer.Consume(ctx, func(received *Message) {
+		// Log every message received for debugging
+		t.Logf("Consumed message: topic=%s partition=%d value=%s", received.Topic, received.Partition, string(received.Value))
+		if string(received.Value) == string(testValue) {
 			found = true
-			cancel()
+			cancel() // Stop consuming once found
 		}
 	})
-	if err != nil && err != context.Canceled && err != context.DeadlineExceeded {
-		t.Fatalf("consumer error: %v", err)
+
+	if consumeErr != nil && consumeErr != context.Canceled && consumeErr != context.DeadlineExceeded {
+		t.Fatalf("Consumer error: %v", consumeErr)
 	}
 	if !found {
-		t.Errorf("consumer did not receive the produced message")
+		t.Errorf("Consumer did not receive the produced message")
 	}
 }
