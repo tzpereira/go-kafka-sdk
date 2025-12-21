@@ -39,8 +39,10 @@ func (p *Producer) StartDeliveryHandler(ctx context.Context, reportFunc func(*Me
 						reportFunc(&Message{
 							Topic:     *ev.TopicPartition.Topic,
 							Partition: ev.TopicPartition.Partition,
-							Value:     ev.Value,
+							Offset:    int64(ev.TopicPartition.Offset),
 							Key:       ev.Key,
+							Value:     ev.Value,
+							Timestamp: ev.Timestamp.UnixMilli(),
 						})
 					}
 				}

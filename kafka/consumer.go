@@ -56,8 +56,10 @@ func (c *Consumer) Consume(ctx context.Context, handler func(msg *Message)) erro
 				handler(&Message{
 					Topic:     *e.TopicPartition.Topic,
 					Partition: e.TopicPartition.Partition,
-					Value:     e.Value,
+					Offset:    int64(e.TopicPartition.Offset),
 					Key:       e.Key,
+					Value:     e.Value,
+					Timestamp: e.Timestamp.UnixMilli(),
 				})
 			case ckafka.Error:
 				log.Printf("Consumer error: %v", e)
@@ -88,8 +90,10 @@ func (c *Consumer) ConsumeBatch(ctx context.Context, handler func(msgs []*Messag
 				batch = append(batch, &Message{
 					Topic:     *e.TopicPartition.Topic,
 					Partition: e.TopicPartition.Partition,
-					Value:     e.Value,
+					Offset:    int64(e.TopicPartition.Offset),
 					Key:       e.Key,
+					Value:     e.Value,
+					Timestamp: e.Timestamp.UnixMilli(),
 				})
 				if len(batch) >= 100 {
 					handler(batch)
