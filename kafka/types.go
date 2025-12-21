@@ -16,6 +16,8 @@ type Consumer struct {
 type Message struct {
 	Topic     string
 	Partition int32
-	Value     []byte
+	Offset    int64
 	Key       []byte
+	Value     []byte
+	Timestamp int64
 }
