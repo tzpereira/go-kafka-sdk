@@ -185,8 +185,68 @@ go run ./examples/consumer
 
 To execute all tests (Kafka must be running on `localhost:9092`):
 
+``` sh 
+    go test -v ./kafka
+```
+
+## Build (amd64 + arm64)
+
+This SDK depends on `librdkafka` via `confluent-kafka-go`, which requires CGO.
+Use the helper script:
+
 ``` sh
-go test -v ./kafka
+./scripts/build.sh
+```
+
+Behavior:
+- Always enables `CGO_ENABLED=1`.
+- On `arm/arm64`, tries a normal build first.
+- If the normal ARM build fails, retries with `TAGS=dynamic` (system `librdkafka`).
+
+Examples:
+
+``` sh
+# Native amd64 build
+GOARCH=amd64 ./scripts/build.sh
+
+# Native arm64 build (tries normal build first)
+GOARCH=arm64 ./scripts/build.sh
+
+# Force dynamic linking (requires system librdkafka installed)
+TAGS=dynamic ./scripts/build.sh
+```
+
+Notes:
+- Cross-compiling with CGO requires a cross toolchain and target `librdkafka`.
+- Dynamic builds require `pkg-config` to find `rdkafka.pc`.
+
+## Using This SDK In Another Project (ARM)
+
+`./scripts/build.sh` only affects this SDK repository.
+When another project imports this module, build/run commands must be executed
+in that consuming project.
+
+Try normal commands first:
+
+``` sh
+go build ./...
+go run ./...
+go test ./...
+```
+
+If your environment requires dynamic linking, install system dependencies and
+add the `dynamic` tag in the consuming project:
+
+``` sh
+# macOS (Homebrew)
+brew install librdkafka pkg-config
+
+# Linux (Debian/Ubuntu)
+sudo apt-get install -y librdkafka-dev pkg-config
+
+CGO_ENABLED=1 go build -tags dynamic ./...
+CGO_ENABLED=1 go run -tags dynamic ./...
+CGO_ENABLED=1 go test -tags dynamic ./...
 ```
 
 ## Notes
